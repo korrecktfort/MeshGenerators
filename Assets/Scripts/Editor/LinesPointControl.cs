@@ -21,10 +21,10 @@ public class LinesPointControl : Editor {
 			this.lineGeometryPoint.AddLine();
 		}
 
-		if(GUILayout.Button("Remove Last"))
-		{
-			this.lineGeometryPoint.RemoveLast();
-		}
+//		if(GUILayout.Button("Remove Last"))
+//		{
+//			this.lineGeometryPoint.RemoveLast();
+//		}
 		GUILayout.EndHorizontal();
 	}
 

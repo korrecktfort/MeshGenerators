@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 
-[System.Serializable]
-public class Line : MonoBehaviour{
+public class Line{
 	/// <summary>
 	/// Class Line
 	/// </summary>

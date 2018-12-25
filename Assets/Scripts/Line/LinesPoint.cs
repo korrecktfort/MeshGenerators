@@ -21,10 +21,10 @@ public class LinesPoint : MonoBehaviour {
 		this.lines.AddLine();
 	}
 
-	public void RemoveLast()
-	{
-		this.lines.RemoveLast();
-	}
+//	public void RemoveLast()
+//	{
+//		this.lines.RemoveLast();
+//	}
 
 	public void OnPaste()
 	{

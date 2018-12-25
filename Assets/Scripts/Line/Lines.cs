@@ -3,14 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
+[ExecuteInEditMode, DisallowMultipleComponent]
 public class Lines : MonoBehaviour {
 
 	[Header("Gizmo Settings")]
 	[SerializeField] float labelDistance = 0.5f;
 	[SerializeField] bool enableSmoothGizmos;
+	[SerializeField] bool overrideGizmoSettingsInPoints;
+	[SerializeField] GizmoDrawer.GizmoSettings gizmoOverrideSettings;
 
 	[Header("Smoothing")]
 	[SerializeField] bool smooth;
+	internal bool Smooth{
+		get{
+			return this.smooth;
+		}
+	}
 	private bool lastSmooth = false;
 
 	[SerializeField] bool smoothEnds;
@@ -18,10 +26,20 @@ public class Lines : MonoBehaviour {
 
 	[Range(0, 10)]
 	[SerializeField] int smoothSteps = 5;
+	internal int SmoothSteps{
+		get { 
+			return this.smoothSteps;
+		}
+	}
 	private int lastSmoothSteps = 5;
 
 	[Range(0.0f, 1.0f)]
 	[SerializeField] float smoothDistance = 1.0f;
+	internal float SmoothDistance{
+		get{ 
+			return this.smoothDistance;
+		}
+	}
 	private float lastSmoothDistance = 1.0f;
 
 	[Range(0.0f, 1.0f)]
@@ -30,9 +48,14 @@ public class Lines : MonoBehaviour {
 
 	private List<Vector3> currentSmoothPositions = new List<Vector3>();
 	
-	[Header("Line Geometry Settings")]
-	[SerializeField] bool autoSelectNewPoint = false;
-	[SerializeField] List<Transform> points = new List<Transform>();
+	// [Header("Line Geometry Settings")]
+	private bool autoSelectNewPoint = false;
+	private List<Transform> points = new List<Transform>();
+	internal int CurrentPointsCount{
+		get{ 
+			return this.points.Count;
+		}
+	}
 
 	private Transform copy;
 	private string pointBaseName = "Line Point";
@@ -54,8 +77,16 @@ public class Lines : MonoBehaviour {
 
 #if UNITY_EDITOR
 
-	internal void OnInternalValuesChange()
+	public void OnInternalValuesChange(bool calcLines = false)
 	{
+		if (calcLines) {
+			if (smooth) {
+				CalcSmoothLinesSingleBezier ();
+			} else {
+				CalcPlacedLines ();
+			}
+		}
+
 		if(OnLineValuesChange != null)
 		{
 			OnLineValuesChange();
@@ -66,50 +97,35 @@ public class Lines : MonoBehaviour {
 	{
 		if (this.smooth != this.lastSmooth)
 		{
-			if (OnLineValuesChange != null)
-			{
-				OnLineValuesChange();
-			}
+			OnInternalValuesChange (true);
 			this.lastSmooth = this.smooth;
 			return;
 		}
 
 		if (this.smooth && this.smoothSteps != this.lastSmoothSteps)
 		{
-			if (OnLineValuesChange != null)
-			{
-				OnLineValuesChange();
-			}
+			OnInternalValuesChange (true);
 			this.lastSmoothSteps = this.smoothSteps;
 			return;
 		}
 
 		if (this.smooth && this.smoothDistance != this.lastSmoothDistance)
 		{
-			if (OnLineValuesChange != null)
-			{
-				OnLineValuesChange();
-			}
+			OnInternalValuesChange (true);
 			this.lastSmoothDistance = this.smoothDistance;
 			return;
 		}
 
 		if (this.smooth && this.smoothDistanceFactor != this.lastSmoothDistanceFactor)
 		{
-			if (OnLineValuesChange != null)
-			{
-				OnLineValuesChange();
-			}
+			OnInternalValuesChange (true);
 			this.lastSmoothDistanceFactor = this.smoothDistanceFactor;
 			return;
 		}
 
 		if (this.smoothEnds != this.lastSmoothEnds)
 		{
-			if (OnLineValuesChange != null)
-			{
-				OnLineValuesChange();
-			}
+			OnInternalValuesChange (true);
 			this.lastSmoothEnds = this.smoothEnds;
 			return;
 		}
@@ -117,7 +133,6 @@ public class Lines : MonoBehaviour {
 
 	private void OnDrawGizmos()
 	{
-
 		if (this.points != null && this.points.Count > 0)
 		{
 			Gizmos.color = Color.blue;
@@ -135,7 +150,6 @@ public class Lines : MonoBehaviour {
 			}
 			Handles.Label(this.points[count - 1].position + Vector3.up * this.labelDistance, count + "/" + count);
 		}
-
 
 		if (this.smooth && this.enableSmoothGizmos)
 		{
@@ -162,6 +176,11 @@ public class Lines : MonoBehaviour {
 			}
 		}
 
+		if (this.overrideGizmoSettingsInPoints) {
+			foreach (GizmoDrawer g in GetComponentsInChildren<GizmoDrawer>(true)) {
+				g.OverrideSettings (this.gizmoOverrideSettings);
+			}
+		}
 	}
 
 #endif
@@ -186,8 +205,12 @@ public class Lines : MonoBehaviour {
 			{
 				continue;
 			}
+				
+			this.points[i -1].forward = l.forward;
 
-			this.points[i].rotation = l.lookRotation;
+			if (i == this.points.Count - 1) {
+				this.points [i].forward = l.forward;
+			}
 
 			newLines.Add(l);
 		}
@@ -199,6 +222,7 @@ public class Lines : MonoBehaviour {
 	{
 		Line[] lines = CalcPlacedLines();
 		List<Vector3> smoothPositions = new List<Vector3>();
+		ResortPoints ();
 
 		for (int currentLine = 1; currentLine <= lines.Length - 1; currentLine++)
 		{
@@ -250,7 +274,7 @@ public class Lines : MonoBehaviour {
 				smoothPositions.Add(l2.end);
 			}
 		}
-
+			
 		this.currentSmoothPositions = smoothPositions;
 
 		List<Line> smoothLines = new List<Line>();
@@ -283,7 +307,7 @@ public class Lines : MonoBehaviour {
 		}
 
 		int count = this.points.Count;
-		GameObject obj = new GameObject(this.pointBaseName + " (" + count + ")");
+		GameObject obj = new GameObject(this.pointBaseName + " (" + (count + 1) + ")");
 		obj.transform.SetParent(this.transform);
 		Vector3 offset = this.transform.position;
 
@@ -312,35 +336,35 @@ public class Lines : MonoBehaviour {
 		}
 	}
 
-	public void RemoveLast()
-	{
-		if (this.points.Count <= 0)
-		{
-			return;
-		}
-
-		foreach (Transform t in this.points)
-		{
-			if (t == null)
-			{
-				ResortPoints();
-				break;
-			}
-		}
-
-		DestroyImmediate(this.points[this.points.Count - 1].gameObject);
-		this.points.RemoveAt(this.points.Count - 1);
-
-		if (autoSelectNewPoint)
-		{
-			Selection.activeGameObject = this.points[this.points.Count - 1].gameObject;
-		}
-
-		if (OnLineValuesChange != null)
-		{
-			OnLineValuesChange();
-		}
-	}
+//	public void RemoveLast()
+//	{
+//		if (this.points.Count <= 0)
+//		{
+//			return;
+//		}
+//
+//		foreach (Transform t in this.points)
+//		{
+//			if (t == null)
+//			{
+//				ResortPoints();
+//				break;
+//			}
+//		}
+//
+//		DestroyImmediate(this.points[this.points.Count - 1].gameObject);
+//		this.points.RemoveAt(this.points.Count - 1);
+//
+//		if (autoSelectNewPoint)
+//		{
+//			Selection.activeGameObject = this.points[this.points.Count - 1].gameObject;
+//		}
+//
+//		if (OnLineValuesChange != null)
+//		{
+//			OnLineValuesChange();
+//		}
+//	}
 
 	public void ResortPoints()
 	{
@@ -350,7 +374,7 @@ public class Lines : MonoBehaviour {
 		{
 			if (t != null)
 			{
-				t.name = this.pointBaseName + " (" + newPoints.Count + ")";
+				t.name = this.pointBaseName + " (" + (newPoints.Count + 1) + ")";
 				newPoints.Add(t);
 			}
 		}
@@ -364,6 +388,8 @@ public class Lines : MonoBehaviour {
 		{
 			points.RemoveAt(points.IndexOf(t));
 		}
+
+		ResortPoints ();
 	}
 
 	public void OnPastePoint(Transform copy)

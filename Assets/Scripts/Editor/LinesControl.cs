@@ -6,23 +6,24 @@ using UnityEditor;
 [CustomEditor(typeof(Lines))]
 public class LinesControl : Editor {
 
-	Lines lineGeometry;
+	Lines lines;
 
 	public override void OnInspectorGUI()
 	{
-		this.lineGeometry = (Lines)target as Lines;
+		this.lines = (Lines)target as Lines;
 		
 		GUILayout.BeginHorizontal();
 
 		if(GUILayout.Button("Add Line"))
 		{
-			this.lineGeometry.AddLine();
+			this.lines.AddLine();
 		}
 
-		if(GUILayout.Button("Remove Last"))
-		{
-			this.lineGeometry.RemoveLast();
-		}
+//		if(GUILayout.Button("Remove Last"))
+//		{
+//			this.lines.RemoveLast();
+//		}
+
 		GUILayout.EndHorizontal();
 
 		base.DrawDefaultInspector();

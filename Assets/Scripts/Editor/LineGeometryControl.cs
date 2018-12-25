@@ -11,19 +11,6 @@ public class LineGeometryControl : Editor {
 	public override void OnInspectorGUI()
 	{
 		this.lineGeometry = (LineGeometry)target as LineGeometry;
-		
-		GUILayout.BeginHorizontal();
-
-		if(GUILayout.Button("Add Line"))
-		{
-			this.lineGeometry.AddLine();
-		}
-
-		if(GUILayout.Button("Remove Last"))
-		{
-			this.lineGeometry.RemoveLast();
-		}
-		GUILayout.EndHorizontal();
 
 		if(GUILayout.Button("Redraw Mesh"))
 		{
