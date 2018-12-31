@@ -101,33 +101,33 @@ public class LineGeometry : MeshGenerator {
 			Vector3 offset01 = l1.right * this.lineThickness * 0.5f;
 			Vector3 offset02 = l2.right * this.lineThickness * 0.5f;
 
-			if(l1.forward == l2.forward)
-			{
-				positions.Add(v2);
-				v2 = l2.end - offset02;
-				positions.Add(v2);
-
-				positions.Add(v4);
-				v4 = l2.end + offset02;
-				positions.Add(v4);
-				continue;
-			}
+//			if(l1.forward == l2.forward)
+//			{
+//				positions.Add(v2);
+//				v2 = l2.end - offset02;
+//				positions.Add(v2);
+//
+//				positions.Add(v4);
+//				v4 = l2.end + offset02;
+//				positions.Add(v4);
+//				continue;
+//			}
 
 			if(i == 1)
 			{
 				v1 = l1.start - offset01;
 				v2 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(v1, l1.forward, l2.end - offset02, -l2.forward);
-				if (v2 == Vector3.zero)
-				{
-					v2 = l1.end - offset01;
-				}
+//				if (v2 == Vector3.zero)
+//				{
+//					v2 = l1.end - offset01;
+//				}
 
 				v3 = l1.start + offset01;
 				v4 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(v3, l1.forward, l2.end + offset02, -l2.forward);
-				if (v4 == Vector3.zero)
-				{
-					v4 = l1.end + offset01;
-				}
+//				if (v4 == Vector3.zero)
+//				{
+//					v4 = l1.end + offset01;
+//				}
 				positions.Add(v1);
 				positions.Add(v2);
 				positions.Add(v3);
@@ -138,18 +138,18 @@ public class LineGeometry : MeshGenerator {
 			{
 				positions.Add(v2);
 				v2 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(l1.start - offset01, l1.forward, l2.end - offset02, -l2.forward);
-				if (v2 == Vector3.zero)
-				{
-					v2 = l1.end - offset01;
-				}
+//				if (v2 == Vector3.zero)
+//				{
+//					v2 = l1.end - offset01;
+//				}
 				positions.Add(v2);
 
 				positions.Add(v4);
 				v4 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(l1.start + offset01, l1.forward, l2.end + offset02, -l2.forward);
-				if (v4 == Vector3.zero)
-				{
-					v4 = l1.end + offset01;
-				}
+//				if (v4 == Vector3.zero)
+//				{
+//					v4 = l1.end + offset01;
+//				}
 				positions.Add(v4);
 
 			}

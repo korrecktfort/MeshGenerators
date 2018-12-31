@@ -1,11 +1,24 @@
 ﻿using UnityEngine;
 
+[System.Serializable]
 public class Line{
 	/// <summary>
 	/// Class Line
 	/// </summary>
 	public Vector3 start;
 	public Vector3 end;
+
+	private float lineRotation = 0.0f;
+	public float LineRotation{
+		get{ 
+			return this.lineRotation;
+		}
+
+		set{ 
+			this.lineRotation = value;
+		}
+	}
+
 
 	public Line(Vector3 start, Vector3 end)
 	{
@@ -40,12 +53,17 @@ public class Line{
 		get{ 
 			float _dot = Vector3.Dot(Vector3.up, this.forward);
 
-			if(Mathf.Abs(_dot) > 0.9999f)
-			{
-				return Vector3.Cross(Vector3.forward, this.forward).normalized;
+			float sign = 1;
+			if (lineRotation == 180.0f) {
+				sign *= -1;
 			}
 
-			return Vector3.Cross(Vector3.up, this.forward).normalized;
+			if(Mathf.Abs(_dot) > 0.9999f)
+			{
+				return Vector3.Cross(Vector3.forward, sign * this.forward).normalized;
+			}
+
+			return Vector3.Cross(Vector3.up, sign * this.forward).normalized;
 		}
 	}
 
@@ -90,4 +108,6 @@ public class Line{
 	public void LookAt(Transform transform){
 		this.forward = (transform.position - this.start).normalized;
 	}
+
+
 }

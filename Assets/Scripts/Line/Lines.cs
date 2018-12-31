@@ -6,6 +6,8 @@ using UnityEditor;
 [ExecuteInEditMode, DisallowMultipleComponent]
 public class Lines : MonoBehaviour {
 
+	#region Variables
+
 	[Header("Gizmo Settings")]
 	[SerializeField] float labelDistance = 0.5f;
 	[SerializeField] bool enableSmoothGizmos;
@@ -49,6 +51,9 @@ public class Lines : MonoBehaviour {
 	private List<Vector3> currentSmoothPositions = new List<Vector3>();
 	
 	// [Header("Line Geometry Settings")]
+	public Line[] currentPlacedLines;
+	private Line[] currentSmoothLines;
+
 	private bool autoSelectNewPoint = false;
 	private List<Transform> points = new List<Transform>();
 	internal int CurrentPointsCount{
@@ -72,8 +77,14 @@ public class Lines : MonoBehaviour {
 		}
 	}
 
+	#endregion
+
 	public delegate void LineActions();
 	public LineActions OnLineValuesChange;
+
+	[Range(-1.0f, 1.0f)]
+	public float dotProductValue = 0.0f;
+	private float lastDotProductValue;
 
 #if UNITY_EDITOR
 
@@ -95,6 +106,12 @@ public class Lines : MonoBehaviour {
 
 	private void Update()
 	{
+		if (this.dotProductValue != this.lastDotProductValue) {
+			OnInternalValuesChange (true);
+			this.lastDotProductValue = this.dotProductValue;
+			return;
+		}
+
 		if (this.smooth != this.lastSmooth)
 		{
 			OnInternalValuesChange (true);
@@ -206,16 +223,24 @@ public class Lines : MonoBehaviour {
 				continue;
 			}
 				
-			this.points[i -1].forward = l.forward;
-
-			if (i == this.points.Count - 1) {
-				this.points [i].forward = l.forward;
+			if(newLines.Count > 0 
+				&& (Vector3.Dot (newLines[0].forward, l.forward) < 0.0f)){
+				l.LineRotation = 180.0f;
 			}
+
+			Transform currentPoint = this.points [i - 1];
+			if (i == this.points.Count - 1) {
+				currentPoint = this.points [i];
+			}
+
+			currentPoint.forward = l.forward;
 
 			newLines.Add(l);
 		}
 
-		return newLines.ToArray();
+		currentPlacedLines = newLines.ToArray ();
+
+		return currentPlacedLines;
 	}
 
 	internal Line[] CalcSmoothLinesSingleBezier()
@@ -285,8 +310,16 @@ public class Lines : MonoBehaviour {
 			Vector3 end = smoothPositions[i];
 
 			Line l = new Line(start, end);
+
+			if(smoothLines.Count > 0 
+				&& (Vector3.Dot (smoothLines[0].forward, l.forward) < this.dotProductValue)){
+				l.LineRotation = 180.0f;
+			}
+				
 			smoothLines.Add(l);
 		}
+
+		this.currentSmoothLines = smoothLines.ToArray ();
 
 		return smoothLines.ToArray();
 	}
@@ -335,36 +368,6 @@ public class Lines : MonoBehaviour {
 			OnLineValuesChange();
 		}
 	}
-
-//	public void RemoveLast()
-//	{
-//		if (this.points.Count <= 0)
-//		{
-//			return;
-//		}
-//
-//		foreach (Transform t in this.points)
-//		{
-//			if (t == null)
-//			{
-//				ResortPoints();
-//				break;
-//			}
-//		}
-//
-//		DestroyImmediate(this.points[this.points.Count - 1].gameObject);
-//		this.points.RemoveAt(this.points.Count - 1);
-//
-//		if (autoSelectNewPoint)
-//		{
-//			Selection.activeGameObject = this.points[this.points.Count - 1].gameObject;
-//		}
-//
-//		if (OnLineValuesChange != null)
-//		{
-//			OnLineValuesChange();
-//		}
-//	}
 
 	public void ResortPoints()
 	{

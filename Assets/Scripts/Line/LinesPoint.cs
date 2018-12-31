@@ -6,7 +6,7 @@ using UnityEditor;
 [ExecuteInEditMode, DisallowMultipleComponent]
 public class LinesPoint : MonoBehaviour {
 
-	Lines lines;
+	public Lines lines;
 	Vector3 lastPos = Vector3.zero;
 
 #if UNITY_EDITOR
@@ -39,7 +39,7 @@ public class LinesPoint : MonoBehaviour {
 			if(this.transform.position != this.lastPos)
 			{
 				this.lastPos = this.transform.position;
-				lines.OnInternalValuesChange();
+				lines.OnInternalValuesChange(true);
 			}
 		}
 	}
