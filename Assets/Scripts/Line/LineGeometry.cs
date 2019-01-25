@@ -20,7 +20,7 @@ public class LineGeometry : MeshGenerator {
 	{
 		base.Awake();
 		this.lines = GetComponent<Lines> ();
-		lines.OnLineValuesChange += DrawLineMesh;
+		lines.OnPointsValuesChange += DrawLineMesh;
 	}
 
 	public void DrawLineMesh()
@@ -29,7 +29,7 @@ public class LineGeometry : MeshGenerator {
 
 		if (this.lines.Smooth && this.lines.CurrentPointsCount > 2 && this.lines.SmoothSteps > 1 && this.lines.SmoothDistance > 0.0f)
 		{
-			Line[] newLines = this.lines.CalcSmoothLinesSingleBezier();
+			Line[] newLines = this.lines.CalcSmoothLines();
 
 			if (this.connectPlanes)
 			{

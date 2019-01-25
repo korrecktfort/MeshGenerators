@@ -21,10 +21,6 @@ public class LinesPointControl : Editor {
 			this.lineGeometryPoint.AddLine();
 		}
 
-//		if(GUILayout.Button("Remove Last"))
-//		{
-//			this.lineGeometryPoint.RemoveLast();
-//		}
 		GUILayout.EndHorizontal();
 	}
 
@@ -34,6 +30,14 @@ public class LinesPointControl : Editor {
 		if(this.lineGeometryPoint != null && e.type == EventType.ValidateCommand && e.commandName == "Duplicate" || e.commandName == "Paste")
 		{
 			this.lineGeometryPoint.OnPaste();
+			Undo.RecordObject(this.lineGeometryPoint, "Point Add");
+		}
+
+		if (this.lineGeometryPoint != null && e.type == EventType.ValidateCommand && e.commandName == "Delete" || e.commandName == "SoftDelete")
+		{
+			this.lineGeometryPoint.OnDelete();
+			Undo.RecordObject(this.lineGeometryPoint, "Point Delete");
+
 		}
 	}
 }

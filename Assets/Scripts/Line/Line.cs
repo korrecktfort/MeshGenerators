@@ -5,9 +5,14 @@ public class Line{
 	/// <summary>
 	/// Class Line
 	/// </summary>
+	
+	[SerializeField]
 	public Vector3 start;
+
+	[SerializeField]
 	public Vector3 end;
 
+	[SerializeField]
 	private float lineRotation = 0.0f;
 	public float LineRotation{
 		get{ 
@@ -18,7 +23,6 @@ public class Line{
 			this.lineRotation = value;
 		}
 	}
-
 
 	public Line(Vector3 start, Vector3 end)
 	{
@@ -38,6 +42,20 @@ public class Line{
 		this.end = line.end;
 	}
 
+	public Line(Line line, float lineRotation)
+	{
+		this.start = line.start;
+		this.end = line.end;
+		this.lineRotation = lineRotation;
+	}
+
+	public Line(Vector3 start, Vector3 end, float lineRotation)
+	{
+		this.start = start;
+		this.end = end;
+		this.lineRotation = lineRotation;
+	}
+
 	public Vector3 forward{
 		get{
 			return (this.end - this.start).normalized;
@@ -52,18 +70,18 @@ public class Line{
 	public Vector3 right{
 		get{ 
 			float _dot = Vector3.Dot(Vector3.up, this.forward);
-
-			float sign = 1;
-			if (lineRotation == 180.0f) {
-				sign *= -1;
-			}
+			Vector3 dir = Vector3.zero;
 
 			if(Mathf.Abs(_dot) > 0.9999f)
 			{
-				return Vector3.Cross(Vector3.forward, sign * this.forward).normalized;
+				dir = Vector3.Cross(Vector3.forward, this.forward).normalized;
+				dir = Quaternion.AngleAxis(this.lineRotation, this.forward) * dir;
+				return dir;
 			}
 
-			return Vector3.Cross(Vector3.up, sign * this.forward).normalized;
+			dir = Vector3.Cross(Vector3.up, this.forward).normalized;
+			dir = Quaternion.AngleAxis(this.lineRotation, this.forward) * dir;
+			return dir;
 		}
 	}
 
