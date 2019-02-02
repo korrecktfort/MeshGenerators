@@ -19,43 +19,28 @@ public class LineGeometry : MeshGenerator {
 	private new void Awake()
 	{
 		base.Awake();
-		this.lines = GetComponent<Lines> ();
-		lines.OnPointsValuesChange += DrawLineMesh;
 	}
 
 	public void DrawLineMesh()
 	{
 		base.ClearMesh();
 
-		if (this.lines.Smooth && this.lines.CurrentPointsCount > 2 && this.lines.SmoothSteps > 1 && this.lines.SmoothDistance > 0.0f)
+		Line[] newLines = this.lines.CurrentLines;
+
+		if(newLines == null)
 		{
-			Line[] newLines = this.lines.CalcSmoothLines();
+			return;
+		}
 
-			if (this.connectPlanes)
-			{
-				base.AddQuadPositionsNoRedraw(CalcMeshPositions(newLines));
-			} else
-			{
-				foreach (Line l in newLines)
-				{
-					base.AddLineNoRedraw(l, this.lineThickness);
-				}
-			}
-
-		} else
+		if (this.connectPlanes)
 		{
-			Line[] newLines = this.lines.CalcPlacedLines();
-
-			if (connectPlanes)
+			base.AddQuadPositionsNoRedraw(CalcMeshPositions(newLines));
+		}
+		else
+		{
+			foreach (Line l in newLines)
 			{
-				base.AddQuadPositionsNoRedraw(CalcMeshPositions(newLines));
-			} 
-			else 
-			{
-				foreach (Line l in newLines)
-				{
-					base.AddLineNoRedraw(l, this.lineThickness);
-				}
+				base.AddLineNoRedraw(l, this.lineThickness);
 			}
 		}
 
@@ -64,21 +49,16 @@ public class LineGeometry : MeshGenerator {
 
 #if UNITY_EDITOR
 
-	private void Update()
+	private void OnValidate()
 	{
-		if (this.lastLineThickness != this.lineThickness)
+		if(this.lines == null)
 		{
-			this.lines.OnInternalValuesChange ();
-			this.lastLineThickness = this.lineThickness;
-			return;
+			this.lines = GetComponent<Lines>();
+			lines.OnPointsValuesChange -= DrawLineMesh;
+			lines.OnPointsValuesChange += DrawLineMesh;
 		}
 
-		if (this.connectPlanes != this.lastConnectPlanes)
-		{			
-			DrawLineMesh();
-			this.lastConnectPlanes = this.connectPlanes;
-			return;
-		}
+		DrawLineMesh();	
 	}
 #endif
 
@@ -101,33 +81,15 @@ public class LineGeometry : MeshGenerator {
 			Vector3 offset01 = l1.right * this.lineThickness * 0.5f;
 			Vector3 offset02 = l2.right * this.lineThickness * 0.5f;
 
-//			if(l1.forward == l2.forward)
-//			{
-//				positions.Add(v2);
-//				v2 = l2.end - offset02;
-//				positions.Add(v2);
-//
-//				positions.Add(v4);
-//				v4 = l2.end + offset02;
-//				positions.Add(v4);
-//				continue;
-//			}
-
 			if(i == 1)
 			{
 				v1 = l1.start - offset01;
 				v2 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(v1, l1.forward, l2.end - offset02, -l2.forward);
-//				if (v2 == Vector3.zero)
-//				{
-//					v2 = l1.end - offset01;
-//				}
+
 
 				v3 = l1.start + offset01;
 				v4 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(v3, l1.forward, l2.end + offset02, -l2.forward);
-//				if (v4 == Vector3.zero)
-//				{
-//					v4 = l1.end + offset01;
-//				}
+
 				positions.Add(v1);
 				positions.Add(v2);
 				positions.Add(v3);
@@ -138,20 +100,13 @@ public class LineGeometry : MeshGenerator {
 			{
 				positions.Add(v2);
 				v2 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(l1.start - offset01, l1.forward, l2.end - offset02, -l2.forward);
-//				if (v2 == Vector3.zero)
-//				{
-//					v2 = l1.end - offset01;
-//				}
+
 				positions.Add(v2);
 
 				positions.Add(v4);
 				v4 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(l1.start + offset01, l1.forward, l2.end + offset02, -l2.forward);
-//				if (v4 == Vector3.zero)
-//				{
-//					v4 = l1.end + offset01;
-//				}
-				positions.Add(v4);
 
+				positions.Add(v4);
 			}
 
 			if (i == lines.Length - 1)

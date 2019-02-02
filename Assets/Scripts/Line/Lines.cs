@@ -13,7 +13,7 @@ public class Lines : MonoBehaviour {
 	[Header("Gizmo Settings")]
 	private float labelDistance = 0.5f;
 
-	[SerializeField] bool showLineRotationGizmos = true;
+	[SerializeField] bool showLineRotationGizmos = false;
 	public bool ShowLineRotationGizmos
 	{
 		get
@@ -403,8 +403,6 @@ public class Lines : MonoBehaviour {
 
 	public void OnValidate()
 	{
-		OnInternalValuesChange(true);
-
 		if (this.circle && !this.circleLineRegistered)
 		{
 			RegisterLineForCircle();
@@ -412,6 +410,8 @@ public class Lines : MonoBehaviour {
 		{
 			DeregisterLineForNoCircle();
 		}
+
+		OnInternalValuesChange(true);
 	}
 
 	private void OnDrawGizmos()
@@ -485,17 +485,21 @@ public class Lines : MonoBehaviour {
 	public void BuildNewRegistration(bool buttonPressed = false)
 	{
 		this.registeredLines = null;
-		this.currentSmoothLines = null;
-		this.currentPlacedLines = null;
-
-
-		if (this.smooth)
+		if (buttonPressed)
 		{
-			CalcSmoothLines();
-		} else
-		{
-			CalcPlacedLines();
+			this.currentSmoothLines = null;
+			this.currentPlacedLines = null;
+
+			if (this.smooth)
+			{
+				CalcSmoothLines();
+			} else
+			{
+				CalcPlacedLines();
+			}
 		}
+
+
 
 		List<RegisteredLine> newRegisteredLines = new List<RegisteredLine>();
 
@@ -507,14 +511,20 @@ public class Lines : MonoBehaviour {
 
 		this.registeredLines = newRegisteredLines.ToArray();
 
-		if (this.circle && this.circleLineRegistered)
+		if (!buttonPressed)
 		{
-			RegisterLineForCircle();
-			return;
+			OnInternalValuesChange(true);
 		}
+
 
 		if (buttonPressed)
 		{
+			if (this.circle && this.circleLineRegistered)
+			{
+				RegisterLineForCircle();
+				return;
+			}
+
 			OnInternalValuesChange(true);
 		}
 

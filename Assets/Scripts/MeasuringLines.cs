@@ -37,7 +37,7 @@ public class MeasuringLines : MonoBehaviour {
 				this.currentDistance = 0.1f;
 			} else
 			{
-				this.currentDistance = this.linesDistance;
+				this.currentDistance = this.linesDistance - 0.00001f;
 			}
 
 		}
