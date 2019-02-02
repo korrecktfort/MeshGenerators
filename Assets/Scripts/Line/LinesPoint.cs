@@ -29,21 +29,17 @@ public class LinesPoint : MonoBehaviour {
 		this.lines.OnPastePoint(this.transform);
 	}
 
-	public void OnDelete()
-	{
-
-	}
 #endif
 
 	private void Update()
 	{
-		if(Selection.activeTransform == this.transform)
+		if (Selection.activeTransform == this.transform)
 		{
-			if(this.transform.position != this.lastPos)
+			if (this.transform.position != this.lastPos)
 			{
 				this.lastPos = this.transform.position;
 
-				this.lines.PositionValuesChanged(this.transform);
+				this.lines.PositionValuesChanged();
 			}
 		}
 	}

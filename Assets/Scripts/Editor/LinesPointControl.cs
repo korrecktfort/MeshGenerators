@@ -29,15 +29,25 @@ public class LinesPointControl : Editor {
 		Event e = Event.current;
 		if(this.lineGeometryPoint != null && e.type == EventType.ValidateCommand && e.commandName == "Duplicate" || e.commandName == "Paste")
 		{
-			this.lineGeometryPoint.OnPaste();
-			Undo.RecordObject(this.lineGeometryPoint, "Point Add");
+			if(Selection.objects.Length > 1)
+			{
+				Debug.LogWarning("Multiple Duplication Of LinesPoint Is Not Supported");
+				return;
+			} else
+			{
+				this.lineGeometryPoint.OnPaste();
+				Undo.RecordObject(this.lineGeometryPoint, "Point Add");
+			}
+
 		}
 
 		if (this.lineGeometryPoint != null && e.type == EventType.ValidateCommand && e.commandName == "Delete" || e.commandName == "SoftDelete")
 		{
-			this.lineGeometryPoint.OnDelete();
+			
 			Undo.RecordObject(this.lineGeometryPoint, "Point Delete");
 
 		}
 	}
+
+	
 }
