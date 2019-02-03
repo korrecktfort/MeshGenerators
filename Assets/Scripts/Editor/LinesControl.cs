@@ -16,7 +16,12 @@ public class LinesControl : Editor {
 		{
 			lines.AddPointAtEnd();
 		}
-		
+
+		if (GUILayout.Button("Recalculate All Lines"))
+		{
+			lines.BuildNewRegistration(true);
+		}
+
 		GUILayout.EndHorizontal();
 
 		base.DrawDefaultInspector();
@@ -41,12 +46,11 @@ public class LinesControl : Editor {
 
 			if (lines.ShowLineRotationGizmos)
 			{
-
 				Vector3 center = line.center;
+				
 				EditorGUI.BeginChangeCheck();
-
 				Quaternion rot = Handles.RotationHandle(line.lookRotation, center);
-
+				
 				if (EditorGUI.EndChangeCheck())
 				{
 					Undo.RecordObject(target, "Rotate Line");

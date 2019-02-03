@@ -76,6 +76,7 @@
     <Compile Include="Assets\Scripts\Line\LinesPoint.cs" />
     <Compile Include="Assets\Scripts\Line\MonoLine.cs" />
     <Compile Include="Assets\Scripts\Line\Spline.cs" />
+    <Compile Include="Assets\Scripts\MeasuringLines.cs" />
     <Compile Include="Assets\Utilities.cs" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>C:/Users/Bernhard/Documents/GitHub/MeshGenerators/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>

@@ -6,79 +6,58 @@ using UnityEditor;
 [RequireComponent(typeof(Lines)), DisallowMultipleComponent, ExecuteInEditMode]
 public class LineGeometry : MeshGenerator {
 
+	[Header("Test Geometry")]
 	[Range(0.0f, 25.0f)]
 	[SerializeField] float lineThickness = 1.0f;
-	private float lastLineThickness = 1.0f;
 
 	[Header("Connect Planes")]
 	[SerializeField] bool connectPlanes;
-	private bool lastConnectPlanes;
 
 	private Lines lines;
+
+	Vector3[] currentRingPoints;
 
 	private new void Awake()
 	{
 		base.Awake();
-		this.lines = GetComponent<Lines> ();
-		lines.OnPointsValuesChange += DrawLineMesh;
 	}
 
 	public void DrawLineMesh()
 	{
 		base.ClearMesh();
 
-		if (this.lines.Smooth && this.lines.CurrentPointsCount > 2 && this.lines.SmoothSteps > 1 && this.lines.SmoothDistance > 0.0f)
+		Line[] newLines = this.lines.CurrentLines;
+
+		if(newLines == null || this.currentRingPoints == null)
 		{
-			Line[] newLines = this.lines.CalcSmoothLines();
-
-			if (this.connectPlanes)
-			{
-				base.AddQuadPositionsNoRedraw(CalcMeshPositions(newLines));
-			} else
-			{
-				foreach (Line l in newLines)
-				{
-					base.AddLineNoRedraw(l, this.lineThickness);
-				}
-			}
-
-		} else
-		{
-			Line[] newLines = this.lines.CalcPlacedLines();
-
-			if (connectPlanes)
-			{
-				base.AddQuadPositionsNoRedraw(CalcMeshPositions(newLines));
-			} 
-			else 
-			{
-				foreach (Line l in newLines)
-				{
-					base.AddLineNoRedraw(l, this.lineThickness);
-				}
-			}
+			return;
 		}
+
+		BuildMesh(newLines);
 
 		base.RedrawMesh();
 	}
 
 #if UNITY_EDITOR
 
-	private void Update()
+	private void OnValidate()
 	{
-		if (this.lastLineThickness != this.lineThickness)
+		
+		float offset = this.lineThickness * 0.5f;
+		Vector3 v1 = Vector3.right * -offset;
+		Vector3 v2 = Vector3.up * offset;
+		Vector3 v3 = Vector3.right * offset;
+		this.currentRingPoints = new Vector3[3] { v1, v2, v3 };
+		
+		if(this.lines == null)
 		{
-			this.lines.OnInternalValuesChange ();
-			this.lastLineThickness = this.lineThickness;
-			return;
+			this.lines = GetComponent<Lines>();
 		}
 
-		if (this.connectPlanes != this.lastConnectPlanes)
-		{			
-			DrawLineMesh();
-			this.lastConnectPlanes = this.connectPlanes;
-			return;
-		}
+		lines.OnPointsValuesChange -= DrawLineMesh;
+		lines.OnPointsValuesChange += DrawLineMesh;
+			
+		DrawLineMesh();	
 	}
 #endif
 
@@ -101,33 +80,15 @@ public class LineGeometry : MeshGenerator {
 			Vector3 offset01 = l1.right * this.lineThickness * 0.5f;
 			Vector3 offset02 = l2.right * this.lineThickness * 0.5f;
 
-//			if(l1.forward == l2.forward)
-//			{
-//				positions.Add(v2);
-//				v2 = l2.end - offset02;
-//				positions.Add(v2);
-//
-//				positions.Add(v4);
-//				v4 = l2.end + offset02;
-//				positions.Add(v4);
-//				continue;
-//			}
-
 			if(i == 1)
 			{
 				v1 = l1.start - offset01;
 				v2 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(v1, l1.forward, l2.end - offset02, -l2.forward);
-//				if (v2 == Vector3.zero)
-//				{
-//					v2 = l1.end - offset01;
-//				}
+
 
 				v3 = l1.start + offset01;
 				v4 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(v3, l1.forward, l2.end + offset02, -l2.forward);
-//				if (v4 == Vector3.zero)
-//				{
-//					v4 = l1.end + offset01;
-//				}
+
 				positions.Add(v1);
 				positions.Add(v2);
 				positions.Add(v3);
@@ -138,20 +99,13 @@ public class LineGeometry : MeshGenerator {
 			{
 				positions.Add(v2);
 				v2 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(l1.start - offset01, l1.forward, l2.end - offset02, -l2.forward);
-//				if (v2 == Vector3.zero)
-//				{
-//					v2 = l1.end - offset01;
-//				}
+
 				positions.Add(v2);
 
 				positions.Add(v4);
 				v4 = ExtensionMethods.ClosestCenterPointBetweenTwoLines(l1.start + offset01, l1.forward, l2.end + offset02, -l2.forward);
-//				if (v4 == Vector3.zero)
-//				{
-//					v4 = l1.end + offset01;
-//				}
-				positions.Add(v4);
 
+				positions.Add(v4);
 			}
 
 			if (i == lines.Length - 1)
@@ -168,6 +122,46 @@ public class LineGeometry : MeshGenerator {
 
 		return positions.ToArray(); 
 
+	}
+
+	void BuildMesh(Line[] lines)
+	{
+		int ringVertexCount = this.currentRingPoints.Length;
+		List<Vector3> list = new List<Vector3>();
+
+		foreach(Line l in lines)
+		{
+			Vector3 origin = l.start;
+			Vector3 right = l.right;
+			Vector3 up = l.up;
+
+			foreach(Vector3 v in this.currentRingPoints)
+			{
+				Vector3 v1 = origin + right * v.x + up * v.y;		
+
+				list.Add(v1);
+			}
+		}
+
+		Vector3[] array = list.ToArray();
+		
+		for (int i = 0; i <= array.Length - 1; i+=ringVertexCount)
+		{
+			if(i + 3 > array.Length - 1)
+			{
+				break;
+			}
+			Vector3 v1 = array[i];
+			Vector3 v3 = array[i + 1];
+
+
+			Vector3 v2 = array[i + 2];
+			Vector3 v4 = array[i + 3];
+
+			Quad q = new Quad(v1, v2, v3, v4);
+			
+			base.AddQuad(q);
+		}
 	}
 	
 	#endregion
