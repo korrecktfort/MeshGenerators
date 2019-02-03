@@ -6,15 +6,16 @@ using UnityEditor;
 [RequireComponent(typeof(Lines)), DisallowMultipleComponent, ExecuteInEditMode]
 public class LineGeometry : MeshGenerator {
 
+	[Header("Test Geometry")]
 	[Range(0.0f, 25.0f)]
 	[SerializeField] float lineThickness = 1.0f;
-	private float lastLineThickness = 1.0f;
 
 	[Header("Connect Planes")]
 	[SerializeField] bool connectPlanes;
-	private bool lastConnectPlanes;
 
 	private Lines lines;
+
+	Vector3[] currentRingPoints;
 
 	private new void Awake()
 	{
@@ -27,22 +28,12 @@ public class LineGeometry : MeshGenerator {
 
 		Line[] newLines = this.lines.CurrentLines;
 
-		if(newLines == null)
+		if(newLines == null || this.currentRingPoints == null)
 		{
 			return;
 		}
 
-		if (this.connectPlanes)
-		{
-			base.AddQuadPositionsNoRedraw(CalcMeshPositions(newLines));
-		}
-		else
-		{
-			foreach (Line l in newLines)
-			{
-				base.AddLineNoRedraw(l, this.lineThickness);
-			}
-		}
+		BuildMesh(newLines);
 
 		base.RedrawMesh();
 	}
@@ -51,13 +42,21 @@ public class LineGeometry : MeshGenerator {
 
 	private void OnValidate()
 	{
+		
+		float offset = this.lineThickness * 0.5f;
+		Vector3 v1 = Vector3.right * -offset;
+		Vector3 v2 = Vector3.up * offset;
+		Vector3 v3 = Vector3.right * offset;
+		this.currentRingPoints = new Vector3[3] { v1, v2, v3 };
+		
 		if(this.lines == null)
 		{
 			this.lines = GetComponent<Lines>();
-			lines.OnPointsValuesChange -= DrawLineMesh;
-			lines.OnPointsValuesChange += DrawLineMesh;
 		}
 
+		lines.OnPointsValuesChange -= DrawLineMesh;
+		lines.OnPointsValuesChange += DrawLineMesh;
+			
 		DrawLineMesh();	
 	}
 #endif
@@ -123,6 +122,46 @@ public class LineGeometry : MeshGenerator {
 
 		return positions.ToArray(); 
 
+	}
+
+	void BuildMesh(Line[] lines)
+	{
+		int ringVertexCount = this.currentRingPoints.Length;
+		List<Vector3> list = new List<Vector3>();
+
+		foreach(Line l in lines)
+		{
+			Vector3 origin = l.start;
+			Vector3 right = l.right;
+			Vector3 up = l.up;
+
+			foreach(Vector3 v in this.currentRingPoints)
+			{
+				Vector3 v1 = origin + right * v.x + up * v.y;		
+
+				list.Add(v1);
+			}
+		}
+
+		Vector3[] array = list.ToArray();
+		
+		for (int i = 0; i <= array.Length - 1; i+=ringVertexCount)
+		{
+			if(i + 3 > array.Length - 1)
+			{
+				break;
+			}
+			Vector3 v1 = array[i];
+			Vector3 v3 = array[i + 1];
+
+
+			Vector3 v2 = array[i + 2];
+			Vector3 v4 = array[i + 3];
+
+			Quad q = new Quad(v1, v2, v3, v4);
+			
+			base.AddQuad(q);
+		}
 	}
 	
 	#endregion

@@ -119,7 +119,11 @@ public class MeshGenerator : MonoBehaviour {
 		this.genLinesRefs.Clear ();
 		this.triangles.Clear ();
 		this.vertices.Clear();
-		this.mesh.Clear ();
+
+		if(this.mesh != null)
+		{
+			this.mesh.Clear ();
+		}
 	}
 		
 	#region ChangeTriangles
