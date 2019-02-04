@@ -118,7 +118,8 @@ public class Line{
 	}
 
 	public Quaternion lookRotation{
-		get{ 
+		get
+		{
 			return Quaternion.LookRotation(this.forward, this.up);
 		}
 	}

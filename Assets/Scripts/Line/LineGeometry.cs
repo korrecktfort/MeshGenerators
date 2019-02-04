@@ -8,14 +8,44 @@ public class LineGeometry : MeshGenerator {
 
 	[Header("Test Geometry")]
 	[Range(0.0f, 25.0f)]
-	[SerializeField] float lineThickness = 1.0f;
+	[SerializeField] float scale = 1.0f;
+
+	[SerializeField] bool seamGeometry = true;
 
 	[Header("Connect Planes")]
 	[SerializeField] bool connectPlanes;
 
 	private Lines lines;
 
-	Vector3[] currentRingPoints;
+	[SerializeField]
+	private Vector2[] currentRingPoints;
+
+	[System.Serializable]
+	public struct SegmentVertexGroup
+	{
+		public SegmentVertexGroup(Vector3[] segmentVertices)
+		{
+			this.segmentVertices = segmentVertices;
+		}
+
+		public SegmentVertexGroup(SegmentVertexGroup segmentVertices)
+		{
+			this.segmentVertices = segmentVertices.segmentVertices;
+		}
+
+		public Vector3[] segmentVertices;
+	}
+
+	[System.Serializable]
+	public struct SegmentQuadGroup
+	{
+		public SegmentQuadGroup(Quad[] segmentQuads)
+		{
+			this.segmentQuads = segmentQuads;
+		}
+
+		public Quad[] segmentQuads;
+	}
 
 	private new void Awake()
 	{
@@ -25,6 +55,11 @@ public class LineGeometry : MeshGenerator {
 	public void DrawLineMesh()
 	{
 		base.ClearMesh();
+
+		if(this.currentRingPoints.Length < 2)
+		{
+			return;
+		}
 
 		Line[] newLines = this.lines.CurrentLines;
 
@@ -42,13 +77,11 @@ public class LineGeometry : MeshGenerator {
 
 	private void OnValidate()
 	{
-		
-		float offset = this.lineThickness * 0.5f;
-		Vector3 v1 = Vector3.right * -offset;
-		Vector3 v2 = Vector3.up * offset;
-		Vector3 v3 = Vector3.right * offset;
-		this.currentRingPoints = new Vector3[3] { v1, v2, v3 };
-		
+		if(this.currentRingPoints.Length < 2)
+		{
+			return;
+		}
+
 		if(this.lines == null)
 		{
 			this.lines = GetComponent<Lines>();
@@ -77,8 +110,8 @@ public class LineGeometry : MeshGenerator {
 			Line l1 = lines[i - 1];
 			Line l2 = lines[i];
 
-			Vector3 offset01 = l1.right * this.lineThickness * 0.5f;
-			Vector3 offset02 = l2.right * this.lineThickness * 0.5f;
+			Vector3 offset01 = l1.right * this.scale * 0.5f;
+			Vector3 offset02 = l2.right * this.scale * 0.5f;
 
 			if(i == 1)
 			{
@@ -127,7 +160,8 @@ public class LineGeometry : MeshGenerator {
 	void BuildMesh(Line[] lines)
 	{
 		int ringVertexCount = this.currentRingPoints.Length;
-		List<Vector3> list = new List<Vector3>();
+		List<SegmentVertexGroup> vertexGroups = new List<SegmentVertexGroup>();
+		List<SegmentQuadGroup> quadGroups = new List<SegmentQuadGroup>();
 
 		foreach(Line l in lines)
 		{
@@ -135,35 +169,55 @@ public class LineGeometry : MeshGenerator {
 			Vector3 right = l.right;
 			Vector3 up = l.up;
 
-			foreach(Vector3 v in this.currentRingPoints)
+			List<Vector3> vertices = new List<Vector3>();
+			// Calculate All Vertices
+			foreach (Vector3 v in this.currentRingPoints)
 			{
-				Vector3 v1 = origin + right * v.x + up * v.y;		
-
-				list.Add(v1);
+				vertices.Add(origin + right * v.x * this.scale + up * v.y * this.scale);
 			}
+
+			vertexGroups.Add(new SegmentVertexGroup(vertices.ToArray()));
 		}
 
-		Vector3[] array = list.ToArray();
-		
-		for (int i = 0; i <= array.Length - 1; i+=ringVertexCount)
+		if (this.lines.circle)
 		{
-			if(i + 3 > array.Length - 1)
+			vertexGroups[0] = new SegmentVertexGroup(vertexGroups[vertexGroups.Count - 1]);
+		}
+
+		SegmentVertexGroup[] vertexGroupArray = vertexGroups.ToArray();
+
+		for(int i = 1; i <= lines.Length - 1; i++)
+		{
+			SegmentVertexGroup s1 = vertexGroupArray[i - 1];
+			SegmentVertexGroup s2 = vertexGroupArray[i];
+			List <Quad> quads = new List<Quad>();
+
+			for (int v = 1; v <= ringVertexCount - 1; v++)
 			{
-				break;
+				Quad q = new Quad(s1.segmentVertices[v - 1], s2.segmentVertices[v - 1], s1.segmentVertices[v], s2.segmentVertices[v]);
+				quads.Add(q);
 			}
-			Vector3 v1 = array[i];
-			Vector3 v3 = array[i + 1];
 
+			if (this.seamGeometry)
+			{
+				Quad qSeam = new Quad(s1.segmentVertices[ringVertexCount - 1], s2.segmentVertices[ringVertexCount - 1], s1.segmentVertices[0], s2.segmentVertices[0]);
+				quads.Add(qSeam);
+			}
 
-			Vector3 v2 = array[i + 2];
-			Vector3 v4 = array[i + 3];
+			quadGroups.Add(new SegmentQuadGroup(quads.ToArray()));
+		}
 
-			Quad q = new Quad(v1, v2, v3, v4);
-			
-			base.AddQuad(q);
+		quadGroups.ToArray();
+
+		foreach(SegmentQuadGroup sQuad in quadGroups)
+		{
+			foreach(Quad quad in sQuad.segmentQuads)
+			{
+				base.AddQuad(quad);
+			}
 		}
 	}
-	
+
 	#endregion
 
 }

@@ -107,11 +107,13 @@ public class MeshGenerator : MonoBehaviour {
 	}
 
 	internal void RedrawMesh(){
-		mesh.Clear ();
-		mesh.SetVertices (this.vertices);
-		mesh.SetTriangles (this.triangleIndices, this.submeshIndex);
-		mesh.RecalculateNormals ();
-		// this.meshRenderer.material = this.material;
+		if(this.mesh != null)
+		{
+			mesh.Clear ();
+			mesh.SetVertices (this.vertices);
+			mesh.SetTriangles (this.triangleIndices, this.submeshIndex);
+			mesh.RecalculateNormals ();
+		}
 	}
 
 	internal void ClearMesh(){

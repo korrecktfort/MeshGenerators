@@ -16,7 +16,7 @@ public class LinesPointControl : Editor {
 
 		GUILayout.BeginHorizontal();
 
-		if(GUILayout.Button("Add Line"))
+		if(GUILayout.Button("Add Line at Lines End"))
 		{
 			this.lineGeometryPoint.AddLine();
 		}
@@ -26,6 +26,11 @@ public class LinesPointControl : Editor {
 
 	private void OnSceneGUI()
 	{
+		if(this.lineGeometryPoint == null)
+		{
+			return;
+		}
+
 		Event e = Event.current;
 		if(this.lineGeometryPoint != null && e.type == EventType.ValidateCommand && e.commandName == "Duplicate" || e.commandName == "Paste")
 		{
@@ -38,16 +43,51 @@ public class LinesPointControl : Editor {
 				this.lineGeometryPoint.OnPaste();
 				Undo.RecordObject(this.lineGeometryPoint, "Point Add");
 			}
-
 		}
 
 		if (this.lineGeometryPoint != null && e.type == EventType.ValidateCommand && e.commandName == "Delete" || e.commandName == "SoftDelete")
 		{
-			
 			Undo.RecordObject(this.lineGeometryPoint, "Point Delete");
+		}
 
+		if (!this.lineGeometryPoint.showLineRotationGizmo)
+		{
+			return;
+		}
+
+		Lines lines = this.lineGeometryPoint.lines;
+
+		if(lines == null)
+		{
+			return;
+		}
+
+		int registeredLinesIndex = lines.GetLinesPointIndex(this.lineGeometryPoint.transform);
+
+		if (registeredLinesIndex == -1)
+		{
+			return;
+		}
+
+		Lines.RegisteredLine[] registeredLines = lines.RegisteredLines;
+		Line line = registeredLines[registeredLinesIndex].line;
+
+		if (registeredLines == null || registeredLines.Length == 0 || line == null)
+		{
+			return;
+		}
+
+		Vector3 center = line.center;
+		EditorGUI.BeginChangeCheck();
+		Quaternion rot = Handles.RotationHandle(line.lookRotation, center);
+
+		if (EditorGUI.EndChangeCheck())
+		{
+			Undo.RecordObject(target, "Rotate Line Single Selection");
+			registeredLines[registeredLinesIndex].line.LineRotation = rot.eulerAngles.z;
+
+			lines.RegisteredLines = registeredLines;
+			lines.OnInternalValuesChange(true);
 		}
 	}
-
-	
 }

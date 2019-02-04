@@ -6,8 +6,9 @@ using UnityEditor;
 [ExecuteInEditMode, DisallowMultipleComponent]
 public class LinesPoint : MonoBehaviour {
 
-	private Lines lines;
+	[SerializeField] public Lines lines;
 	Vector3 lastPos = Vector3.zero;
+	[SerializeField] public bool showLineRotationGizmo = true;
 
 #if UNITY_EDITOR
 

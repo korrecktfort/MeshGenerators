@@ -51,7 +51,7 @@ public class Lines : MonoBehaviour {
 
 	bool smoothEnds = true;
 
-	[Range(0, 10)]
+	[Range(0, 100)]
 	[SerializeField] int smoothSteps = 5;
 	internal int SmoothSteps {
 		get {
@@ -60,7 +60,7 @@ public class Lines : MonoBehaviour {
 	}
 
 	[Range(0.0f, 1.0f)]
-	float smoothDistance = 0.75f;
+	public float smoothDistance = 0.75f;
 	internal float SmoothDistance {
 		get {
 			return this.smoothDistance;
@@ -68,7 +68,7 @@ public class Lines : MonoBehaviour {
 	}
 
 	[Range(0.0f, 1.0f)]
-	private float smoothDistanceFactor = 0.75f;
+	public float smoothDistanceFactor = 0.75f;
 
 	private List<Vector3> currentSmoothPositions = new List<Vector3>();
 
@@ -370,6 +370,16 @@ public class Lines : MonoBehaviour {
 		return new DeltaLine(false);
 	}
 
+	public int GetLinesPointIndex(Transform t)
+	{
+		if (this.points.Contains(t))
+		{
+			return this.points.IndexOf(t);
+		}
+
+		return -1;
+	}
+
 	#endregion
 
 	public delegate void LineActions();
@@ -498,9 +508,7 @@ public class Lines : MonoBehaviour {
 				CalcPlacedLines();
 			}
 		}
-
-
-
+			   
 		List<RegisteredLine> newRegisteredLines = new List<RegisteredLine>();
 
 		for(int i = 1; i <= this.points.Count - 1; i++)
