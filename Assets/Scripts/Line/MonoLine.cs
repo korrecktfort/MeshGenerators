@@ -6,21 +6,16 @@ using UnityEngine;
 public class MonoLine : MonoBehaviour {
 
 	[SerializeField]
-	Line line = null;
-	public Line Line
-	{
-		get
-		{
-			return this.line;
-		}
-	}
-
+	public Line line = null;
+	
 	private void OnValidate()
 	{
 		if(this.line == null)
 		{
 			this.line = new Line(Vector3.forward);
-		}		
+		}
+
+		line.ApplyData();
 	}
 
 	private void OnDrawGizmosSelected()

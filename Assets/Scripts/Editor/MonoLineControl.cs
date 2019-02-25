@@ -9,7 +9,7 @@ public class MonoLineControl : Editor {
 	private void OnSceneGUI()
 	{
 		MonoLine myMonoLine = (MonoLine)target as MonoLine;
-		Line line = myMonoLine.Line;
+		Line line = myMonoLine.line;
 		Vector3 center = line.center;
 
 		EditorGUI.BeginChangeCheck();
@@ -19,7 +19,7 @@ public class MonoLineControl : Editor {
 		if (EditorGUI.EndChangeCheck())
 		{
 			Undo.RecordObject(target, "Rotate Line");
-			line.LineRotation = rot.eulerAngles.z;
+			line.LineRotation(rot.eulerAngles.z);
 		}
 	}
 

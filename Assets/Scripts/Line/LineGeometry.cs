@@ -56,14 +56,14 @@ public class LineGeometry : MeshGenerator {
 	{
 		base.ClearMesh();
 
-		if(this.currentRingPoints.Length < 2)
+		if(this.currentRingPoints == null || this.currentRingPoints.Length < 2)
 		{
 			return;
 		}
 
 		Line[] newLines = this.lines.CurrentLines;
 
-		if(newLines == null || this.currentRingPoints == null)
+		if(newLines == null)
 		{
 			return;
 		}
@@ -77,7 +77,7 @@ public class LineGeometry : MeshGenerator {
 
 	private void OnValidate()
 	{
-		if(this.currentRingPoints.Length < 2)
+		if(this.currentRingPoints == null || this.currentRingPoints.Length < 2)
 		{
 			return;
 		}

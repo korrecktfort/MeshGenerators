@@ -53,22 +53,9 @@ public class Lines : MonoBehaviour {
 
 	[Range(0, 100)]
 	[SerializeField] int smoothSteps = 5;
-	internal int SmoothSteps {
-		get {
-			return this.smoothSteps;
-		}
-	}
-
-	[Range(0.0f, 1.0f)]
-	public float smoothDistance = 0.75f;
-	internal float SmoothDistance {
-		get {
-			return this.smoothDistance;
-		}
-	}
-
-	[Range(0.0f, 1.0f)]
-	public float smoothDistanceFactor = 0.75f;
+		
+	[Range(0.0f, 1.0f), HideInInspector]
+	public float smoothDistanceFactor = 0.5035f;
 
 	private List<Vector3> currentSmoothPositions = new List<Vector3>();
 
@@ -103,30 +90,34 @@ public class Lines : MonoBehaviour {
 			this.start = start;
 			this.end = end;
 			this.line = new Line(start.position, end.position);
+			this.line.ApplyData();
 		}
 
 		public RegisteredLine(float lineRotation, Transform start, Transform end)
 		{
 			this.start = start;
 			this.end = end;
-			this.line = new Line(start.position, end.position);
-			this.line.LineRotation = lineRotation;
+			this.line = new Line(start.position, end.position, lineRotation);
+			this.line.ApplyData();
 		}
 
 		public RegisteredLine(RegisteredLine registeredLine)
 		{
 			this.start = registeredLine.start;
 			this.end = registeredLine.end;
-			this.line = new Line(start.position, end.position);
-			this.line.LineRotation = registeredLine.line.LineRotation;
+			this.line = new Line(registeredLine.line);
 		}
 
 		public void Refresh()
 		{
 			if(this.line != null && this.start != null && this.end != null)
 			{
-				line.start = this.start.position;
-				line.end = this.end.position;
+				if(this.line.start != this.start.position || this.line.end != this.end.position)
+				{
+					line.start = this.start.position;
+					line.end = this.end.position;
+					line.ApplyData();
+				}
 			}
 		}
 
@@ -199,7 +190,7 @@ public class Lines : MonoBehaviour {
 		public DeltaLine(float deltaDistance, Line line, bool valid = true)
 		{
 			this.deltaDistance = deltaDistance;
-			this.line = line;
+			this.line = new Line(line);
 			this.valid = valid;
 		}
 
@@ -207,6 +198,7 @@ public class Lines : MonoBehaviour {
 		{
 			this.deltaDistance = 0.0f;
 			this.line = new Line(Vector3.forward);
+			this.line.ApplyData();
 			this.valid = valid;
 		}
 
@@ -274,12 +266,6 @@ public class Lines : MonoBehaviour {
 		return deltaLine.DeltaPosition();
 	}
 
-	public Vector3 PositionAtNormalizedDistance(float normalizedDistance)
-	{
-		float distance = this.Distance * Mathf.Clamp01(normalizedDistance);
-		return PositionAtDistance(distance);
-	}
-
 	public Quaternion RotationAtDistance(float distance)
 	{
 		Line nextLine;
@@ -299,12 +285,6 @@ public class Lines : MonoBehaviour {
 		Quaternion rot = Quaternion.Slerp(deltaLine.line.lookRotation, nextLine.lookRotation, normalizedDistance);
 
 		return rot;
-	}
-
-	public Quaternion RotationAtNormalizedDistance(float normalizedDistance)
-	{
-		float distance = this.Distance * Mathf.Clamp01(normalizedDistance);
-		return RotationAtDistance(distance);
 	}
 
 	private DeltaLine CurrentDeltaLine(float distance, out Line nextLine)
@@ -416,9 +396,13 @@ public class Lines : MonoBehaviour {
 		if (this.circle && !this.circleLineRegistered)
 		{
 			RegisterLineForCircle();
-		} else if(!this.circle && this.circleLineRegistered)
+			return;
+		}
+
+		if(!this.circle && this.circleLineRegistered)
 		{
 			DeregisterLineForNoCircle();
+			return;
 		}
 
 		OnInternalValuesChange(true);
@@ -587,12 +571,12 @@ public class Lines : MonoBehaviour {
 			newRegisteredLines.Add(new RegisteredLine(this.registeredLines[i]));
 		}
 
-		RegisteredLine newRegistration = new RegisteredLine(this.registeredLines[removeIndex].line.LineRotation, this.points[removeIndex - 1], this.points[removeIndex + 1]);
+		RegisteredLine newRegistration = new RegisteredLine(this.registeredLines[removeIndex].line.lineRotation, this.points[removeIndex - 1], this.points[removeIndex + 1]);
 		newRegisteredLines.Add(newRegistration);
 
 		for (int i = removeIndex + 2; i <= this.points.Count - 1; i++)
 		{
-			RegisteredLine reRegister = new RegisteredLine(this.registeredLines[i - 1].line.LineRotation, this.points[i - 1], this.points[i]);
+			RegisteredLine reRegister = new RegisteredLine(this.registeredLines[i - 1].line.lineRotation, this.points[i - 1], this.points[i]);
 			newRegisteredLines.Add(reRegister);
 		}
 
@@ -653,7 +637,7 @@ public class Lines : MonoBehaviour {
 		{
 			foreach(RegisteredLine r in this.registeredLines)
 			{
-				newLines.Add(new Line(r.line, r.line.LineRotation));
+				newLines.Add(new Line(r.line));
 			}
 
 			currentPlacedLines = newLines.ToArray();
@@ -680,27 +664,24 @@ public class Lines : MonoBehaviour {
 
 		int linesLength = lines.Length;
 
-		//// First Point To First Center
 		if (circle)
 		{
 			Line l1 = lines[linesLength - 1];
 			Line l2 = lines[0];
 
 			smoothPositions.Add(l1.center);
-			lineRotations.Add(l1.LineRotation);
+			lineRotations.Add(l1.lineRotation);
 
-			// Bezier Calc Start
-			Vector3 bezierStart = l1.end - l1.forward * l1.distance * this.smoothDistance * this.smoothDistanceFactor;
+			Vector3 bezierStart = l1.end - l1.forward * l1.distance * this.smoothDistanceFactor;
 			Vector3 bezierCenter = l1.end;
-			Vector3 bezierEnd = l2.start + l2.forward * l2.distance * this.smoothDistance * this.smoothDistanceFactor;
+			Vector3 bezierEnd = l2.start + l2.forward * l2.distance * this.smoothDistanceFactor;
 
 			for (int s = 1; s <= this.smoothSteps - 1; s++)
 			{
 				float currentStep = s / (float)this.smoothSteps;
 				smoothPositions.Add(Bezier.GetPoint(bezierStart, bezierCenter, bezierEnd, currentStep));
-				lineRotations.Add(Mathf.LerpAngle(l1.LineRotation, l2.LineRotation, currentStep));
+				lineRotations.Add(Mathf.LerpAngle(l1.lineRotation, l2.lineRotation, currentStep));
 			}
-			// Bezier Calc End
 		}
 
 		for (int currentLine = 1; currentLine <= linesLength - 1; currentLine++)
@@ -725,39 +706,32 @@ public class Lines : MonoBehaviour {
 			if (startSectionAvailable && !circle)
 			{
 				smoothPositions.Add(l1.start);
-				lineRotations.Add(l1.LineRotation);
+				lineRotations.Add(l1.lineRotation);
 			}
 
-			//if ((!this.smoothEnds && startSectionAvailable) || circle)
-			//{
-			//	smoothPositions.Add(l1.center);
-			//	lineRotations.Add(l1.LineRotation);
-			//}
-
-			// Bezier Calc Start
-			Vector3 bezierStart = l1.end - l1.forward * l1.distance * this.smoothDistance * endSmoothDistanceFactorBezierStart;
+			Vector3 bezierStart = l1.end - l1.forward * l1.distance * endSmoothDistanceFactorBezierStart;
 			Vector3 bezierCenter = l1.end;
-			Vector3 bezierEnd = l2.start + l2.forward * l2.distance * this.smoothDistance * endSmoothDistanceFactorBezierEnd;
+			Vector3 bezierEnd = l2.start + l2.forward * l2.distance * endSmoothDistanceFactorBezierEnd;
 
 			for (int s = 1; s <= this.smoothSteps - 1; s++)
 			{
 				float currentStep = s / (float)this.smoothSteps;
 				smoothPositions.Add(Bezier.GetPoint(bezierStart, bezierCenter, bezierEnd, currentStep));
-				lineRotations.Add(Mathf.LerpAngle(l1.LineRotation, l2.LineRotation, currentStep));
+				lineRotations.Add(Mathf.LerpAngle(l1.lineRotation, l2.lineRotation, currentStep));
 			}
-			// Bezier Calc End
-
-			//if ((!this.smoothEnds && endSectionAvailable) || circle)
-			//{
-			//	smoothPositions.Add(l2.center);
-			//	lineRotations.Add(l2.LineRotation);
-			//}
 
 			if (endSectionAvailable && !circle)
 			{
 				smoothPositions.Add(l2.end);
-				lineRotations.Add(l2.LineRotation);
+				lineRotations.Add(l2.lineRotation);
 			}
+		}
+
+		if (circle)
+		{
+			smoothPositions[0] = smoothPositions[smoothPositions.Count - 1];
+			smoothPositions.RemoveAt(smoothPositions.Count - 1);
+			lineRotations.RemoveAt(lineRotations.Count - 1);
 		}
 
 		this.currentSmoothPositions = smoothPositions;
@@ -769,19 +743,20 @@ public class Lines : MonoBehaviour {
 			Vector3 start = smoothPositions[i - 1];
 			Vector3 end = smoothPositions[i];
 
-			Line l = new Line(start, end);
-			l.LineRotation = lineRotations[i - 1];
+			Line l = new Line(start, end, lineRotations[i - 1]);
+			l.ApplyData();
 
 			smoothLines.Add(l);
 		}
+
 
 		if (circle)
 		{
 			Vector3 start = smoothPositions[smoothPositions.Count - 1];
 			Vector3 end = smoothPositions[0];
 
-			Line l = new Line(start, end);
-			l.LineRotation = lineRotations[lineRotations.Count - 1];
+			Line l = new Line(start, end, lineRotations[lineRotations.Count - 1]);
+			l.ApplyData();
 
 			smoothLines.Add(l);
 		}

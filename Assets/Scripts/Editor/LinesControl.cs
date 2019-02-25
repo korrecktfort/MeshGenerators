@@ -54,7 +54,7 @@ public class LinesControl : Editor {
 				if (EditorGUI.EndChangeCheck())
 				{
 					Undo.RecordObject(target, "Rotate Line");
-					registeredLines[i].line.LineRotation = rot.eulerAngles.z;
+					registeredLines[i].line.LineRotation(rot.eulerAngles.z);
 
 					lines.RegisteredLines = registeredLines;
 					lines.OnInternalValuesChange(true);

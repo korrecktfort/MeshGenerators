@@ -47,7 +47,8 @@ public class LinesPointControl : Editor {
 
 		if (this.lineGeometryPoint != null && e.type == EventType.ValidateCommand && e.commandName == "Delete" || e.commandName == "SoftDelete")
 		{
-			Undo.RecordObject(this.lineGeometryPoint, "Point Delete");
+			Undo.DestroyObjectImmediate(this.lineGeometryPoint);
+			return;
 		}
 
 		if (!this.lineGeometryPoint.showLineRotationGizmo)
@@ -70,6 +71,12 @@ public class LinesPointControl : Editor {
 		}
 
 		Lines.RegisteredLine[] registeredLines = lines.RegisteredLines;
+
+		if(registeredLinesIndex == registeredLines.Length)
+		{
+			return;
+		}
+
 		Line line = registeredLines[registeredLinesIndex].line;
 
 		if (registeredLines == null || registeredLines.Length == 0 || line == null)
@@ -84,7 +91,7 @@ public class LinesPointControl : Editor {
 		if (EditorGUI.EndChangeCheck())
 		{
 			Undo.RecordObject(target, "Rotate Line Single Selection");
-			registeredLines[registeredLinesIndex].line.LineRotation = rot.eulerAngles.z;
+			registeredLines[registeredLinesIndex].line.LineRotation(rot.eulerAngles.z);
 
 			lines.RegisteredLines = registeredLines;
 			lines.OnInternalValuesChange(true);

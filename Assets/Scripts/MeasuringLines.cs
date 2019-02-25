@@ -13,9 +13,6 @@ public class MeasuringLines : MonoBehaviour {
 	[Header("Control"), SerializeField]
 	public float currentDistance;
 
-	[Range(0.0f, 1.0f), SerializeField]
-	public float normalizedDistance;
-	
 	private void Measure()
 	{
 		if(this.currentDistance < 0.0f)
@@ -40,6 +37,11 @@ public class MeasuringLines : MonoBehaviour {
 				this.currentDistance = this.linesDistance - 0.00001f;
 			}
 
+		}
+
+		if(this == null)
+		{
+			this.lines.OnPointsValuesChange -= Measure;
 		}
 
 		this.linesDistance = this.lines.Distance;
